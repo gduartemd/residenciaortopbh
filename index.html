@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Residência Ortopedia BH - Editais</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        .edital-title {
+            transition: background-color 0.3s ease;
+        }
+        .edital-title:hover {
+            background-color: #3b82f6; /* Darker blue on hover for title */
+        }
+        .hospital-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .hospital-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .toggle-icon {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        /* Custom scrollbar for better aesthetics (optional) */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; /* Tailwind gray-300 */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; /* Tailwind gray-400 */
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-700">
+                Residência em Ortopedia e Traumatologia - Belo Horizonte
+            </h1>
+            <p class="text-lg text-slate-500 mt-2">Informações agrupadas por Edital</p>
+        </header>
+
+        <div id="data-container" class="space-y-6">
+            <!-- Os dados dos hospitais serão inseridos aqui pelo JavaScript -->
+        </div>
+
+        <footer class="mt-12 text-center text-sm text-slate-500">
+            <p>Dados processados a partir de informações fornecidas. Verifique sempre os editais oficiais.</p>
+        </footer>
+    </div>
+
+    <script>
+        // O conteúdo do arquivo CSV será injetado aqui.
+        // Substitua esta string vazia pelo conteúdo real do seu arquivo CSV.
+        const csvFileContent = `PASTE_CSV_CONTENT_HERE`;
+
+        // Colunas esperadas no CSV (os nomes devem corresponder exatamente aos do arquivo)
+        const CSV_HEADERS = {
+            INSTITUICAO: 'INSTITUIÇÃO',
+            ENDERECO: 'ENDEREÇO',
+            CONTATO: 'CONTATO',
+            EDITAL: 'EDITAL',
+            VAGAS: 'VAGAS (2025)',
+            NOTA_CORTE: 'NOTA DE CORTE (2024)',
+            VALOR_INSCRICAO: 'VALOR DA INSCRIÇÃO',
+            DATA_PROVA: 'DATA DA PROVA (2025)'
+        };
+
+        /**
+         * Realiza o parsing de uma linha do CSV, lidando com campos entre aspas.
+         * @param {string} line - A linha do CSV.
+         * @param {string} delimiter - O delimitador (geralmente ',').
+         * @returns {string[]} Array de valores da linha.
+         */
+        function parseCSVLine(line, delimiter = ',') {
+            const values = [];
+            let currentVal = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    // Se o próximo caractere também for aspas, é uma aspas escapada dentro do campo
+                    if (inQuotes && i + 1 < line.length && line[i+1] === '"') {
+                        currentVal += '"';
+                        i++; // Pula a próxima aspas
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === delimiter && !inQuotes) {
+                    values.push(currentVal);
+                    currentVal = '';
+                } else {
+                    currentVal += char;
+                }
+            }
+            values.push(currentVal); // Adiciona o último valor
+            return values.map(v => v.trim()); // Remove espaços extras e aspas se não forem escapadas
+        }
+
+        /**
+         * Realiza o parsing do texto CSV para um array de objetos.
+         * @param {string} csvText - O conteúdo do CSV como string.
+         * @returns {object[]} Array de objetos, onde cada objeto representa uma linha.
+         */
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split(/\r?\n/);
+            if (lines.length < 2) { // Precisa de cabeçalho e pelo menos uma linha de dados
+                console.error("CSV inválido ou vazio.");
+                return [];
+            }
+
+            // Remove BOM (Byte Order Mark) se presente no início do primeiro cabeçalho
+            const rawHeaders = parseCSVLine(lines[0]);
+            const headers = rawHeaders.map((h, i) => (i === 0 ? h.replace(/^\uFEFF/, '') : h).trim());
+            
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue; // Pula linhas vazias
+
+                const values = parseCSVLine(lines[i]);
+                if (values.length !== headers.length) {
+                    console.warn(`Pulando linha ${i + 1}: número de colunas incompatível. Esperado: ${headers.length}, Encontrado: ${values.length}. Linha: "${lines[i]}"`);
+                    continue;
+                }
+                const entry = {};
+                headers.forEach((header, index) => {
+                    entry[header] = values[index] !== undefined ? values[index] : ''; // Garante que a propriedade existe
+                });
+                data.push(entry);
+            }
+            return data;
+        }
+
+        /**
+         * Agrupa os hospitais pelo campo EDITAL.
+         * @param {object[]} hospitalsData - Array de objetos de hospitais.
+         * @returns {object} Objeto onde as chaves são os editais e os valores são arrays de hospitais.
+         */
+        function groupHospitalsByEdital(hospitalsData) {
+            const grouped = {};
+            hospitalsData.forEach(hospital => {
+                const edital = hospital[CSV_HEADERS.EDITAL] || 'Edital Não Especificado';
+                if (!grouped[edital]) {
+                    grouped[edital] = [];
+                }
+                grouped[edital].push(hospital);
+            });
+            return grouped;
+        }
+
+        /**
+         * Renderiza os dados dos hospitais na página.
+         * @param {object} groupedHospitals - Hospitais agrupados por edital.
+         */
+        function renderData(groupedHospitals) {
+            const container = document.getElementById('data-container');
+            if (!container) {
+                console.error("Container para os dados não encontrado.");
+                return;
+            }
+            container.innerHTML = ''; // Limpa conteúdo anterior
+
+            if (Object.keys(groupedHospitals).length === 0) {
+                container.innerHTML = '<p class="text-center text-slate-500">Nenhum dado de hospital para exibir. Verifique o conteúdo do CSV.</p>';
+                return;
+            }
+            
+            // Campos a serem exibidos para cada hospital e seus rótulos
+            const hospitalDisplayFields = [
+                { key: CSV_HEADERS.ENDERECO, label: 'Endereço' },
+                { key: CSV_HEADERS.CONTATO, label: 'Contato' },
+                { key: CSV_HEADERS.VAGAS, label: 'Vagas (2025)' },
+                { key: CSV_HEADERS.NOTA_CORTE, label: 'Nota de Corte (2024)' },
+                { key: CSV_HEADERS.VALOR_INSCRICAO, label: 'Valor da Inscrição' },
+                { key: CSV_HEADERS.DATA_PROVA, label: 'Data da Prova (2025)' }
+            ];
+
+            // Ordena os editais alfabeticamente para uma apresentação consistente
+            const sortedEditais = Object.keys(groupedHospitals).sort();
+
+            sortedEditais.forEach((edital, index) => {
+                const hospitals = groupedHospitals[edital];
+
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'edital-group bg-white rounded-lg shadow-md overflow-hidden';
+
+                const titleDiv = document.createElement('h2');
+                titleDiv.className = 'edital-title text-xl sm:text-2xl font-semibold p-4 bg-sky-600 text-white cursor-pointer flex justify-between items-center';
+                titleDiv.innerHTML = `<span>Edital: ${edital}</span> <span class="toggle-icon text-2xl">${index === 0 ? '−' : '+'}</span>`;
+                
+                const hospitalsListDiv = document.createElement('div');
+                hospitalsListDiv.className = `hospitals-list p-4 space-y-4 border-t border-slate-200 ${index === 0 ? '' : 'hidden'}`;
+
+                hospitals.forEach(hospital => {
+                    const card = document.createElement('div');
+                    card.className = 'hospital-card bg-slate-50 p-4 rounded-md border border-slate-200 shadow-sm';
+                    
+                    let cardHTML = `<h3 class="text-lg font-bold text-sky-700 mb-2">${hospital[CSV_HEADERS.INSTITUICAO] || 'Instituição Não Informada'}</h3>`;
+                    
+                    hospitalDisplayFields.forEach(field => {
+                        const value = hospital[field.key] ? hospital[field.key] : '<span class="italic text-slate-400">Não informado</span>';
+                        cardHTML += `<p class="text-sm text-slate-600"><strong class="font-medium">${field.label}:</strong> ${value}</p>`;
+                    });
+                    
+                    card.innerHTML = cardHTML;
+                    hospitalsListDiv.appendChild(card);
+                });
+
+                groupDiv.appendChild(titleDiv);
+                groupDiv.appendChild(hospitalsListDiv);
+                container.appendChild(groupDiv);
+
+                // Event listener para expandir/recolher
+                titleDiv.addEventListener('click', () => {
+                    const icon = titleDiv.querySelector('.toggle-icon');
+                    const isHidden = hospitalsListDiv.classList.toggle('hidden');
+                    icon.textContent = isHidden ? '+' : '−';
+                });
+            });
+        }
+
+        // Função principal para carregar e exibir os dados
+        function main() {
+            if (csvFileContent === 'PASTE_CSV_CONTENT_HERE' || csvFileContent.trim() === '') {
+                const container = document.getElementById('data-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md" role="alert">
+                            <p class="font-bold">Atenção!</p>
+                            <p>O conteúdo do arquivo CSV não foi carregado. Por favor, edite o código HTML, substitua a linha \`const csvFileContent = \\\`PASTE_CSV_CONTENT_HERE\\\`;\` pelo conteúdo real do seu arquivo CSV e clique em "Preview" novamente.</p>
+                        </div>`;
+                }
+                console.warn("Conteúdo CSV não fornecido. Cole os dados na variável 'csvFileContent'.");
+                return;
+            }
+
+            try {
+                const parsedData = parseCSV(csvFileContent);
+                if (parsedData.length === 0 && csvFileContent.trim() !== '') {
+                     console.warn("O CSV foi processado, mas resultou em zero entradas. Verifique o formato do CSV e os cabeçalhos.");
+                }
+                const groupedData = groupHospitalsByEdital(parsedData);
+                renderData(groupedData);
+            } catch (error) {
+                console.error("Erro ao processar os dados CSV:", error);
+                const container = document.getElementById('data-container');
+                if (container) {
+                    container.innerHTML = `<p class="text-center text-red-500">Ocorreu um erro ao carregar os dados. Verifique o console para mais detalhes.</p>`;
+                }
+            }
+        }
+
+        // Executa a função principal quando o DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', main);
+    </script>
+</body>
+</html>
