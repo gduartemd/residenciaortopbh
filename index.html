@@ -64,20 +64,37 @@
     </div>
 
     <script>
-        // O conteúdo do arquivo CSV será injetado aqui.
-        // Substitua esta string vazia pelo conteúdo real do seu arquivo CSV.
-        const csvFileContent = `PASTE_CSV_CONTENT_HERE`;
+        // Conteúdo do arquivo CSV fornecido pelo usuário.
+        const csvFileContent = `Nome do Hospital,Quantidade de Vagas,Qual Edital Segue,Data da Prova (Ingresso em 2025)
+"Associação Evangélica Beneficente de Minas Gerais/Hospital Evangélico de Belo Horizonte","4 vagas [1]","PSU-MG (AREMG) [1]","01 de Dezembro de 2024 [1]"
+"Associação Mario Penna – Hospital Luxemburgo","3 vagas [1]","PSU-MG (AREMG) [1]","01 de Dezembro de 2024 [1]"
+"Fundação de Desenvolvimento da Pesquisa – Hospital Risoleta Tolentino Neves","1 vaga [1]","PSU-MG (AREMG) [1]","01 de Dezembro de 2024 [1]"
+"Hospital Alberto Cavalcanti (FHEMIG)","A confirmar nos editais [2]","ENARE / PSU-MG / Processo Seletivo Próprio FHEMIG [2]","ENARE: Outubro de 2024 (data a confirmar no edital ENARE 03/2024) [3, 4]; PSU-MG: 01 de Dezembro de 2024 (se aplicável) [1]; FHEMIG Complementar: 28 de Fevereiro de 2025 (se aplicável) [5, 6]"
+"Hospital da Baleia – Fundação Benjamin Guimarães","3 vagas [1]","PSU-MG (AREMG) [1]","01 de Dezembro de 2024 [1]"
+"Hospital das Clínicas da UFMG (HC-UFMG/Ebserh)","4 vagas (para ingresso em 2024, via ENARE) [3]","ENARE (provável para 2025) [3, 7]; AREMG para reopção/vagas remanescentes [7]","ENARE: Outubro de 2024 (data a confirmar no edital ENARE 03/2024) [3, 4]"
+"Hospital Felício Rocho","3 vagas [1]","PSU-MG (AREMG) [1]","01 de Dezembro de 2024 [1]"
+"Hospital João XXIII (FHEMIG)","A confirmar no Anexo II do Edital ENARE [4, 8]","ENARE (Edital Nº 03/2024) [4]","Outubro de 2024 (data a confirmar no edital ENARE 03/2024) [3, 4]"
+"Hospital Júlia Kubitschek (FHEMIG)","A confirmar nos editais [2]","ENARE / PSU-MG / Processo Seletivo Próprio FHEMIG [2]","ENARE: Outubro de 2024 (data a confirmar no edital ENARE 03/2024) [3, 4]; PSU-MG: 01 de Dezembro de 2024 (se aplicável) [1]; FHEMIG Complementar: 28 de Fevereiro de 2025 (se aplicável) [5, 6]"
+"Hospital Madre Teresa – BH","3 vagas [1]","PSU-MG (AREMG) [1]","01 de Dezembro de 2024 [1]"
+"Hospital Mater Dei – Unidade Santo Agostinho","4 vagas [1]","PSU-MG (AREMG) [1]","01 de Dezembro de 2024 [1]"
+"Hospital Metropolitano Doutor Célio de Castro","3 vagas [9]","PSU-MG Complementar (AREMG) [10, 9]","Início de 2025 (prova objetiva após 31/01/2025, data da divulgação do quadro de vagas do complementar) [9]"
+"Hospital Socor","2 vagas [1]","PSU-MG (AREMG) [1]","01 de Dezembro de 2024 [1]"
+"Hospital Universitário Ciências Médicas - MG","4 (aprovados, indicativo de vagas) [11]","CMMG/Feluma (Edital 026/2024) [12, 11]","Prova objetiva antes de 15/10/2024 (data da divulgação do gabarito preliminar) [12]"
+"Outros Hospitais da Rede FHEMIG (BH)","A confirmar nos editais [2]","ENARE / PSU-MG / Processo Seletivo Próprio FHEMIG [2]","ENARE: Outubro de 2024 (data a confirmar no edital ENARE 03/2024) [3, 4]; PSU-MG: 01 de Dezembro de 2024 (se aplicável) [1]; FHEMIG Complementar: 28 de Fevereiro de 2025 (se aplicável) [5, 6]"`;
 
         // Colunas esperadas no CSV (os nomes devem corresponder exatamente aos do arquivo)
+        // Mapeia para os nomes das colunas fornecidas pelo usuário.
         const CSV_HEADERS = {
-            INSTITUICAO: 'INSTITUIÇÃO',
-            ENDERECO: 'ENDEREÇO',
-            CONTATO: 'CONTATO',
-            EDITAL: 'EDITAL',
-            VAGAS: 'VAGAS (2025)',
-            NOTA_CORTE: 'NOTA DE CORTE (2024)',
-            VALOR_INSCRICAO: 'VALOR DA INSCRIÇÃO',
-            DATA_PROVA: 'DATA DA PROVA (2025)'
+            INSTITUICAO: 'Nome do Hospital',
+            VAGAS: 'Quantidade de Vagas',
+            EDITAL: 'Qual Edital Segue',
+            DATA_PROVA: 'Data da Prova (Ingresso em 2025)',
+            // Campos do CSV anterior que não estão neste, mas que o script pode tentar referenciar.
+            // O script já lida com a ausência deles, mostrando "Não informado".
+            ENDERECO: 'ENDEREÇO', // Este campo não existe no CSV atual
+            CONTATO: 'CONTATO', // Este campo não existe no CSV atual
+            NOTA_CORTE: 'NOTA DE CORTE (2024)', // Este campo não existe no CSV atual
+            VALOR_INSCRICAO: 'VALOR DA INSCRIÇÃO' // Este campo não existe no CSV atual
         };
 
         /**
@@ -93,10 +110,9 @@
             for (let i = 0; i < line.length; i++) {
                 const char = line[i];
                 if (char === '"') {
-                    // Se o próximo caractere também for aspas, é uma aspas escapada dentro do campo
                     if (inQuotes && i + 1 < line.length && line[i+1] === '"') {
                         currentVal += '"';
-                        i++; // Pula a próxima aspas
+                        i++; 
                     } else {
                         inQuotes = !inQuotes;
                     }
@@ -107,8 +123,8 @@
                     currentVal += char;
                 }
             }
-            values.push(currentVal); // Adiciona o último valor
-            return values.map(v => v.trim()); // Remove espaços extras e aspas se não forem escapadas
+            values.push(currentVal);
+            return values.map(v => v.trim());
         }
 
         /**
@@ -118,18 +134,17 @@
          */
         function parseCSV(csvText) {
             const lines = csvText.trim().split(/\r?\n/);
-            if (lines.length < 2) { // Precisa de cabeçalho e pelo menos uma linha de dados
+            if (lines.length < 2) {
                 console.error("CSV inválido ou vazio.");
                 return [];
             }
 
-            // Remove BOM (Byte Order Mark) se presente no início do primeiro cabeçalho
             const rawHeaders = parseCSVLine(lines[0]);
             const headers = rawHeaders.map((h, i) => (i === 0 ? h.replace(/^\uFEFF/, '') : h).trim());
             
             const data = [];
             for (let i = 1; i < lines.length; i++) {
-                if (lines[i].trim() === '') continue; // Pula linhas vazias
+                if (lines[i].trim() === '') continue; 
 
                 const values = parseCSVLine(lines[i]);
                 if (values.length !== headers.length) {
@@ -138,7 +153,7 @@
                 }
                 const entry = {};
                 headers.forEach((header, index) => {
-                    entry[header] = values[index] !== undefined ? values[index] : ''; // Garante que a propriedade existe
+                    entry[header] = values[index] !== undefined ? values[index] : '';
                 });
                 data.push(entry);
             }
@@ -153,6 +168,7 @@
         function groupHospitalsByEdital(hospitalsData) {
             const grouped = {};
             hospitalsData.forEach(hospital => {
+                // Usa o nome da coluna do CSV fornecido pelo usuário para agrupar.
                 const edital = hospital[CSV_HEADERS.EDITAL] || 'Edital Não Especificado';
                 if (!grouped[edital]) {
                     grouped[edital] = [];
@@ -172,24 +188,25 @@
                 console.error("Container para os dados não encontrado.");
                 return;
             }
-            container.innerHTML = ''; // Limpa conteúdo anterior
+            container.innerHTML = ''; 
 
             if (Object.keys(groupedHospitals).length === 0) {
                 container.innerHTML = '<p class="text-center text-slate-500">Nenhum dado de hospital para exibir. Verifique o conteúdo do CSV.</p>';
                 return;
             }
             
-            // Campos a serem exibidos para cada hospital e seus rótulos
+            // Campos a serem exibidos para cada hospital e seus rótulos.
+            // Ajustado para refletir as colunas do CSV fornecido e manter a estrutura.
             const hospitalDisplayFields = [
+                { key: CSV_HEADERS.VAGAS, label: 'Quantidade de Vagas' },
+                { key: CSV_HEADERS.DATA_PROVA, label: 'Data da Prova (Ingresso em 2025)' },
+                // Mantém os campos antigos para que o layout não quebre; eles mostrarão "Não informado".
                 { key: CSV_HEADERS.ENDERECO, label: 'Endereço' },
                 { key: CSV_HEADERS.CONTATO, label: 'Contato' },
-                { key: CSV_HEADERS.VAGAS, label: 'Vagas (2025)' },
                 { key: CSV_HEADERS.NOTA_CORTE, label: 'Nota de Corte (2024)' },
-                { key: CSV_HEADERS.VALOR_INSCRICAO, label: 'Valor da Inscrição' },
-                { key: CSV_HEADERS.DATA_PROVA, label: 'Data da Prova (2025)' }
+                { key: CSV_HEADERS.VALOR_INSCRICAO, label: 'Valor da Inscrição' }
             ];
 
-            // Ordena os editais alfabeticamente para uma apresentação consistente
             const sortedEditais = Object.keys(groupedHospitals).sort();
 
             sortedEditais.forEach((edital, index) => {
@@ -209,9 +226,13 @@
                     const card = document.createElement('div');
                     card.className = 'hospital-card bg-slate-50 p-4 rounded-md border border-slate-200 shadow-sm';
                     
+                    // Usa o nome da coluna do CSV fornecido pelo usuário para o nome da instituição.
                     let cardHTML = `<h3 class="text-lg font-bold text-sky-700 mb-2">${hospital[CSV_HEADERS.INSTITUICAO] || 'Instituição Não Informada'}</h3>`;
                     
                     hospitalDisplayFields.forEach(field => {
+                        // O valor será buscado usando a chave mapeada em CSV_HEADERS.
+                        // Se a chave (ex: 'ENDEREÇO') não corresponder a uma coluna no CSV atual,
+                        // hospital[field.key] será undefined.
                         const value = hospital[field.key] ? hospital[field.key] : '<span class="italic text-slate-400">Não informado</span>';
                         cardHTML += `<p class="text-sm text-slate-600"><strong class="font-medium">${field.label}:</strong> ${value}</p>`;
                     });
@@ -224,7 +245,6 @@
                 groupDiv.appendChild(hospitalsListDiv);
                 container.appendChild(groupDiv);
 
-                // Event listener para expandir/recolher
                 titleDiv.addEventListener('click', () => {
                     const icon = titleDiv.querySelector('.toggle-icon');
                     const isHidden = hospitalsListDiv.classList.toggle('hidden');
@@ -233,18 +253,17 @@
             });
         }
 
-        // Função principal para carregar e exibir os dados
         function main() {
-            if (csvFileContent === 'PASTE_CSV_CONTENT_HERE' || csvFileContent.trim() === '') {
+            if (csvFileContent.trim() === '') {
                 const container = document.getElementById('data-container');
                 if (container) {
                     container.innerHTML = `
                         <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md" role="alert">
                             <p class="font-bold">Atenção!</p>
-                            <p>O conteúdo do arquivo CSV não foi carregado. Por favor, edite o código HTML, substitua a linha \`const csvFileContent = \\\`PASTE_CSV_CONTENT_HERE\\\`;\` pelo conteúdo real do seu arquivo CSV e clique em "Preview" novamente.</p>
+                            <p>O conteúdo do arquivo CSV está vazio no código. Isso não deveria acontecer se você colou o CSV.</p>
                         </div>`;
                 }
-                console.warn("Conteúdo CSV não fornecido. Cole os dados na variável 'csvFileContent'.");
+                console.warn("Conteúdo CSV vazio.");
                 return;
             }
 
@@ -264,7 +283,6 @@
             }
         }
 
-        // Executa a função principal quando o DOM estiver pronto
         document.addEventListener('DOMContentLoaded', main);
     </script>
 </body>
